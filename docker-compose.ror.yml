@@ -1,0 +1,36 @@
+services:
+  backend_ror:
+    build:
+      context: ./backend_ror
+    ports:
+      - "5001:5001"
+    volumes:
+      - ror_sqlite_data:/rails/storage
+    environment:
+      RAILS_MASTER_KEY: c34c53a55ec2bf41f84af760d070e104
+      DATABASE_PATH: /rails/storage/production.sqlite3
+      PORT: "5001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5001
+    ports:
+      - "3001:3000"
+    depends_on:
+      backend_ror:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5001
+
+volumes:
+  ror_sqlite_data:
